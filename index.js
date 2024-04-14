@@ -1,4 +1,4 @@
-const qrcode = require('qrcode-terminal');
+var qrImg = require('qr-image');
 
 const { Client } = require('whatsapp-web.js');
 const { MessageMedia } = require('whatsapp-web.js');
@@ -8,17 +8,21 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 
+var log4js = require("log4js");
+var logger = log4js.getLogger();
+logger.level = "debug";
+
 var flag = false;
 
 // Validate ENV
 if (typeof process.env.WA_KEY === 'undefined') {
-    console.log("API Key is undefined, execute: setx WA_KEY your_api_key");
+    logger.error("API Key is undefined, execute: setx WA_KEY your_api_key");
 
     return;
 }
 
 if (typeof process.env.WA_PORT === 'undefined') {
-    console.log("API port is undefined, execute: setx WA_PORT 3000");
+    logger.error("API port is undefined, execute: setx WA_PORT 3000");
 
     return;
 }
@@ -27,25 +31,35 @@ const apiKey = process.env.WA_KEY;
 const port = process.env.WA_PORT;
 
 // Start WhatsApp Client
-const client = new Client();
+const client = new Client({
+    webVersionCache: {
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+        type: 'remote'
+    } 
+});
 
 // Create QR
 client.on('qr', qr => {
-    console.log('Scan QR image with WhatsApp application');
-    qrcode.generate(qr, {small: true});
+    logger.info('Generating QR Code Session');
+    
+    var qr_png = qrImg.image(qr, { type: 'png' });
+
+    qr_png.pipe(require('fs').createWriteStream('qrcode.png'));
+
+    logger.info('Please scan image of file qrcode.png');
 });
 
 // Client is ready
 client.on('ready', () => {
-    console.log('WhatsApp REST API is ready');
+    logger.info('WhatsApp REST API is ready');
     flag = true;
 });
 
-console.log("Initializing WhatsApp REST API");
+logger.info("Initializing WhatsApp REST API");
 
 client.initialize();
 
-console.log("Press CTRL+C to crash application");
+logger.info("Press CTRL+C to crash application");
 
 // Error function
 function error(err, req, res, next) {
@@ -83,8 +97,7 @@ app.post('/sendmsg', (req, res) => {
 
             var contact = "521" + tel.substr(tel.length - 10) + "@c.us";
 
-            console.log("MSG =  " + msg);
-            console.log("TO =  " + contact);
+            logger.info("SEND TEXT " + contact);
 
             client.sendMessage(contact, msg);
 
@@ -114,9 +127,7 @@ app.post('/sendmed', async function(req, res) {
 
             var contact = "521" + tel.substr(tel.length - 10) + "@c.us";
 
-            console.log("MSG =  " + msg);
-            console.log("TO =  " + contact);
-            console.log("URL =  " + url);
+            logger.info("SEND MEDIA " + contact);
 
             var media = await MessageMedia.fromUrl(url);
 
@@ -150,9 +161,7 @@ app.post('/sendloc', async function(req, res) {
 
             var contact = "521" + tel.substr(tel.length - 10) + "@c.us";
 
-            console.log("LOC =  " + name);
-            console.log("TO =  " + contact);
-            console.log("ADR =  " + address);
+            logger.info("SEND LOCATION " + contact);
 
             var location = new Location(lat, lng, {name:name, address:address});
             client.sendMessage(contact, location);
@@ -172,5 +181,5 @@ app.post('/sendloc', async function(req, res) {
 });
 
 app.listen(port, () => {
-    console.log(`WhatsApp REST API listening on port ${port}`);
+    logger.info(`WhatsApp REST API listening on port ${port}`);
 });
