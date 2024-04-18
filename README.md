@@ -13,7 +13,7 @@ WhatsApp REST API
 2.- Create environment variable WA_PORT.
 3.- Clone repository and run npm install to install dependencies.
 4.- Execute node index.js.
-5.- Scan QR generated qrcode.png with WhatsApp application and enjoy.
+5.- Scan QR generated qrcode.png on http://localhost:PORT/qrcode.png with WhatsApp application and enjoy.
 ~~~
 
 ## Usage ##

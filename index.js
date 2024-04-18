@@ -72,6 +72,9 @@ function error(err, req, res, next) {
 
 app.use(error);
 
+// For serve qrcode.png
+app.use(express.static('./'));
+
 app.use(bodyParser.urlencoded({
   extended: true
 }));
